@@ -1,0 +1,111 @@
+// Define Ultrasonic Sensor Pins (Moved from 10/11)
+#define TRIG_PIN 8
+#define ECHO_PIN 9
+
+// Define L298N Motor Driver Logic Pins
+#define IN1 4 // Left Motor Forward
+#define IN2 5 // Left Motor Backward
+#define IN3 6 // Right Motor Forward
+#define IN4 7 // Right Motor Backward
+
+// Define L298N Speed Control Pins (Digital PWM)
+#define ENA 10 // Left Motor Speed
+#define ENB 11 // Right Motor Speed
+
+#define OBSTACLE_DISTANCE 20 
+
+// Set your desired speed here (0 to 255)
+int carSpeed = 150; 
+int turnSpeed = 180; // slightly higher power for turning
+
+void setup() {
+  Serial.begin(9600);
+
+  // Initialize Ultrasonic Sensor
+  pinMode(TRIG_PIN, OUTPUT);
+  pinMode(ECHO_PIN, INPUT);
+
+  // Initialize Motor Driver Pins
+  pinMode(IN1, OUTPUT);
+  pinMode(IN2, OUTPUT);
+  pinMode(IN3, OUTPUT);
+  pinMode(IN4, OUTPUT);
+  pinMode(ENA, OUTPUT);
+  pinMode(ENB, OUTPUT);
+  
+  delay(2000);
+}
+
+void loop() {
+  int distance = getDistance();
+  Serial.print("Distance: ");
+  Serial.print(distance);
+  Serial.println(" cm");
+
+  if (distance > 0 && distance < OBSTACLE_DISTANCE) {
+    stopMotors();
+    delay(300);
+    
+    moveBackward();
+    delay(500); 
+    
+    stopMotors();
+    delay(300);
+    
+    turnRight();
+    delay(400); 
+  } else {
+    moveForward();
+  }
+  
+  delay(50);
+}
+
+int getDistance() {
+  digitalWrite(TRIG_PIN, LOW);
+  delayMicroseconds(2);
+  digitalWrite(TRIG_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG_PIN, LOW);
+  
+  long duration = pulseIn(ECHO_PIN, HIGH, 30000); 
+  if (duration == 0) return 100; 
+  return duration * 0.034 / 2;
+}
+
+// --- Motor Control Functions with Speed ---
+void moveForward() {
+  analogWrite(ENA, carSpeed);
+  analogWrite(ENB, carSpeed);
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, LOW);
+  digitalWrite(IN3, HIGH);
+  digitalWrite(IN4, LOW);
+}
+
+void moveBackward() {
+  analogWrite(ENA, carSpeed);
+  analogWrite(ENB, carSpeed);
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, HIGH);
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, HIGH);
+}
+
+void turnRight() {
+  analogWrite(ENA, turnSpeed);
+  analogWrite(ENB, turnSpeed);
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, LOW);
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, HIGH);
+}
+
+void stopMotors() {
+  analogWrite(ENA, 0);
+  analogWrite(ENB, 0);
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, LOW);
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, LOW);
+}
